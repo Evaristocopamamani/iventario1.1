@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VENTA EXPRESS 1.0 - Bolivia</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- LIBRERÍA DE GRÁFICOS CHART.JS -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- LIBRERÍA LECTOR DE CÓDIGOS DE BARRAS / QR -->
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+    <style>
+        * { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; box-sizing: border-box; margin:0; padding:0; }
+        body { background: #c0c0c0; padding:10px; }
+        .ventana { border: 2px outset #fff; background: #c0c0c0; max-width:1100px; margin:0 auto; }
+        .barra-sup { background: linear-gradient(90deg, #000080, #1084d0); color:white; padding:4px 8px; font-weight:bold; display:flex; justify-content:space-between; align-items:center; }
+        .menu-sup { background:#e0e0e0; border-bottom:1px solid #808080; padding:5px; gap:6px; display:flex; flex-wrap:wrap; }
+        .btn-menu { border:2px outset; background:#d4d0c8; padding:8px 12px; font-weight:bold; cursor:pointer; font-size:14px; }
+        .btn-menu:active { border-style:inset; }
+        .btn-menu.activo { background:#b8d4f0; }
+        .fondo-amarillo { background:#ffff99; }
+        .fondo-azul { background:#00b0f0; }
+        .recuadro-total { border:3px solid #ffcc00; background:white; }
+        .recuadro-alcanza { border:3px solid green; background:#e6ffec; padding:12px; margin:10px 0; border-radius:4px; }
+        .recuadro-falta { border:3px solid red; background:#ffebeb; padding:12px; margin:10px 0; border-radius:4px; }
+        .boton-verde { background:#00b050; color:white; font-weight:bold; border:2px outset; padding:8px 16px; cursor:pointer; font-size:16px; }
+        .boton-verde:active { border-style:inset; }
+        .boton-rojo { background:red; color:white; font-weight:bold; border:2px outset; padding:8px 16px; cursor:pointer; font-size:16px; }
+        .boton-rojo:active { border-style:inset; }
+        .boton-azul { background:#0070c0; color:white; font-weight:bold; border:2px outset; padding:6px 12px; cursor:pointer; }
+        .boton-verde-claro { background:#92d050; font-weight:bold; border:2px outset; padding:6px 12px; cursor:pointer; }
+        .boton-amarillo { background:#ffff99; font-weight:bold; border:2px outset; padding:6px 12px; cursor:pointer; }
+        .modal-pago { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.4); align-items:center; justify-content:center; z-index:999; }
+        .modal-activo { display:flex; }
+        .caja-modal { background:white; border:3px outset; padding:15px; min-width:320px; }
+        .sugerencias { position:absolute; background:white; border:1px solid #808080; width:100%; max-height:180px; overflow-y:auto; z-index:9999; display:none; }
+        .item-sug { padding:8px; cursor:pointer; border-bottom:1px solid #ddd; font-size:15px; }
+        .item-sug:hover { background:#bdd7ee; }
+        .alerta-stock { animation: parpadeo 1s infinite; }
+        @keyframes parpadeo { 50% { background-color: #ffd966; } }
+        .resumen-tabla { background:#e0e0e0; border-top:2px solid black; padding:8px; font-weight:bold; display:flex; flex-wrap:wrap; gap:20px; }
+        .oculto { display: none !important; }
+        .texto-naranja { color:#d95e00; font-weight:bold; }
+        .p-3 { padding:12px; }
+        .p-4 { padding:16px; }
+        .p-5 { padding:20px; }
+        .mt-1 { margin-top:4px; }
+        .mt-2 { margin-top:8px; }
+        .mb-1 { margin-bottom:4px; }
+        .mb-2 { margin-bottom:8px; }
+        .mb-3 { margin-bottom:12px; }
+        .mb-4 { margin-bottom:16px; }
+        .gap-2 { gap:8px; }
+        .gap-3 { gap:12px; }
+        .gap-4 { gap:16px; }
+        .gap-6 { gap:24px; }
+        .w-full { width:100%; }
+        .text-sm { font-size:14px; }
+        .text-lg { font-size:18px; }
+        .text-xl { font-size:20px; }
+        .font-bold { font-weight:700; }
+        .text-center { text-align:center; }
+        .text-right { text-align:right; }
+        .border { border:1px solid black; }
+        .border-2 { border-width:2px; }
+        .border-black { border-color:black; }
+        .border-collapse { border-collapse:collapse; }
+        .rounded { border-radius:4px; }
+        .flex { display:flex; }
+        .flex-wrap { flex-wrap:wrap; }
+        .items-center { align-items:center; }
+        .justify-center { justify-content:center; }
+        .justify-between { justify-content:space-between; }
+        .flex-col { flex-direction:column; }
+        .grid { display:grid; }
+        .grid-cols-1 { grid-template-columns:repeat(1, minmax(0, 1fr)); }
+        @media (min-width: 768px) {
+            .md\:grid-cols-2 { grid-template-columns:repeat(2, minmax(0, 1fr)); }
+        }
+        .space-y-2 > * + * { margin-top:8px; }
+        .w-36 { width:144px; }
+        .w-40 { width:160px; }
+        .w-24 { width:96px; }
+        .w-28 { width:112px; }
+        .w-44 { width:176px; }
+        .w-56 { width:224px; }
+        .w-64 { width:256px; }
+        .w-72 { width:288px; }
+        .w-80 { width:320px; }
+        .w-16 { width:64px; }
+        .px-10 { padding-left:40px; padding-right:40px; }
+        .py-1 { padding-top:4px; padding-bottom:4px; }
+        .py-5 { padding-top:20px; padding-bottom:20px; }
+        .overflow-x-auto { overflow-x:auto; }
+        .relative { position:relative; }
+        .cursor-pointer { cursor:pointer; }
+        .hover\:bg-yellow-200:hover { background-color:#fef08a; }
+        .bg-gray-50 { background-color:#f9fafb; }
+        .bg-gray-100 { background-color:#f3f4f6; }
+        .bg-gray-300 { background-color:#d1d5db; }
+        .bg-blue-50 { background-color:#eff6ff; }
+        .bg-blue-100 { background-color:#dbeafe; }
+        .bg-blue-300 { background-color:#93c5fd; }
+        .bg-yellow-50 { background-color:#fefce8; }
+        .bg-yellow-100 { background-color:#fef9c3; }
+        .text-red-700 { color:#b91c1c; }
+        .text-green-700 { color:#15803d; }
+        .text-blue-800 { color:#1e40af; }
+    </style>
+</head>
+<body>
+
+<div class="ventana">
+    <div class="barra-sup">
+        <span>VENTA EXPRESS 1.0</span>
+        <span style="cursor:pointer;">🗙</span>
+    </div>
+
+    <div class="menu-sup">
+        <button id="btn-ventas" class="btn-menu activo" onclick="cambiarPestana('ventas')">PRODUCTOS</button>
+        <button id="btn-inventario" class="btn-menu" onclick="cambiarPestana('inventario')">INVENTARIO</button>
+        <button id="btn-trabajadores" class="btn-menu" onclick="cambiarPestana('trabajadores')">TRABAJADORES</button>
+        <button id="btn-gastos" class="btn-menu" onclick="cambiarPestana('gastos')">GASTOS</button>
+        <button id="btn-resumen" class="btn-menu" onclick="cambiarPestana('resumen')">RESUMEN</button>
+    </div>
+
+
+    <!-- SECCIÓN VENTAS -->
+    <div id="sec-ventas" class="p-3">
+        <h2 class="text-center font-bold text-xl mb-2 bg-black text-white py-1">PRODUCTOS A VENDER</h2>
+        <div class="fondo-amarillo p-2 overflow-x-auto">
+            <table class="w-full text-sm border-collapse">
+                <thead class="bg-gray-300 border-b-2 border-black">
+                    <tr>
+                        <th class="p-1 border">Código</th>
+                        <th class="p-1 border">Nombre</th>
+                        <th class="p-1 border">Cantidad</th>
+                        <th class="p-1 border">Valor Unitario</th>
+                        <th class="p-1 border">Valor Total</th>
+                        <th class="p-1 border">Quitar</th>
+                    </tr>
+                </thead>
+                <tbody id="lista-carrito"></tbody>
+            </table>
+        </div>
+        <div class="fondo-azul p-4 mt-1 flex flex-wrap items-center justify-between gap-4">
+            <div>
+                <div class="mb-3 flex items-center gap-2">
+                    <label class="font-bold text-lg w-36">Código / Nombre:</label>
+                    <div class="relative">
+                        <input type="text" id="buscar-prod" class="p-2 w-72 text-lg border border-black" placeholder="Escribe aquí..." autocomplete="off">
+                        <div id="lista-sugerencias" class="sugerencias"></div>
+                    </div>
+                </div>
+                <div class="mb-4 flex items-center gap-2">
+                    <label class="font-bold text-lg w-36">Cantidad:</label>
+                    <input type="number" id="cant-vender" min="1" value="1" class="p-2 w-24 text-lg border border-black">
+                </div>
+                <div class="flex gap-3">
+                    <button onclick="agregarAVenta()" class="boton-verde">AGREGAR</button>
+                    <button onclick="iniciarPago()" class="boton-verde-claro">PAGAR</button>
+                    <button onclick="limpiarVenta()" class="boton-rojo">CANCELAR</button>
+                </div>
+            </div>
+            <div class="recuadro-total px-10 py-5 text-center">
+                <h2 class="text-3xl font-bold mb-2">TOTAL</h2>
+                <p class="text-5xl font-bold text-blue-800" id="total-general">0.00 Bs</p>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- SECCIÓN INVENTARIO -->
+    <div id="sec-inventario" class="p-3 oculto">
+        <h2 class="text-center font-bold text-xl mb-2 bg-black text-white py-1">EDICIÓN DE PRODUCTOS</h2>
+        <div class="mb-3 flex items-center gap-2">
+            <label class="font-bold">🔍 Buscar producto:</label>
+            <input type="text" id="buscar-inv" class="p-2 border border-black w-80" placeholder="Escribe código o nombre..." autocomplete="off">
+        </div>
+        <div class="fondo-amarillo p-2 overflow-x-auto">
+            <table class="w-full text-sm border-collapse">
+                <thead class="bg-gray-300 border-b-2 border-black">
+                    <tr>
+                        <th class="p-1 border">#</th>
+                        <th class="p-1 border">Código</th>
+                        <th class="p-1 border">Nombre Producto</th>
+                        <th class="p-1 border">Stock</th>
+                        <th class="p-1 border">Costo Compra</th>
+                        <th class="p-1 border">Precio Venta</th>
+                        <th class="p-1 border">Stock Crítico</th>
+                    </tr>
+                </thead>
+                <tbody id="lista-inv"></tbody>
+            </table>
+            <div class="resumen-tabla mt-2">
+                <span>📦 Productos distintos: <strong id="tot-prod">0</strong></span>
+                <span>🔢 Unidades totales: <strong id="tot-unid">0</strong></span>
+                <span>💰 Valor total costo: <strong id="tot-costo">0.00 Bs</strong></span>
+                <span>💵 Valor total venta: <strong id="tot-venta">0.00 Bs</strong></span>
+            </div>
+        </div>
+        <div class="fondo-azul p-4 mt-1 flex flex-wrap gap-6">
+            <div class="space-y-2">
+                <div class="flex gap-2 items-center">
+                    <label class="w-32 text-right font-bold">Código:</label>
+                    <div class="flex items-center gap-1">
+                        <input type="text" id="cod-prod" class="p-1 border border-black w-44">
+                        <button type="button" onclick="abrirEscanearCamara()" class="boton-amarillo px-2 py-1 flex items-center gap-1" title="Escanear con cámara">
+                            📷 <span class="text-xs">Escanear</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="flex gap-2 items-center">
+                    <label class="w-32 text-right font-bold">Nombre:</label>
+                    <input type="text" id="nom-prod" class="p-1 border border-black w-56">
+                </div>
+                <div class="flex gap-2 items-center">
+                    <label class="w-32 text-right font-bold">Stock Inicial / Actual:</label>
+                    <input type="number" min="0" id="stock-prod" class="p-1 border border-black w-28">
+                </div>
+                <div class="flex gap-2 items-center">
+                    <label class="w-32 text-right font-bold texto-naranja">+ Agregar reposición:</label>
+                    <input type="number" min="0" value="0" id="reponer-prod" class="p-1 border border-black w-28 texto-naranja">
+                </div>
+                <div class="flex gap-2 items-center">
+                    <label class="w-32 text-right font-bold">Costo Compra:</label>
+                    <input type="number" step="0.01" min="0" id="costo-prod" class="p-1 border border-black w-28">
+                </div>
+                <div class="flex gap-2 items-center">
+                    <label class="w-32 text-right font-bold">Precio Venta:</label>
+                    <input type="number" step="0.01" min="0" id="venta-prod" class="p-1 border border-black w-28">
+                </div>
+                <div class="flex gap-2 items-center">
+                    <label class="w-32 text-right font-bold">Stock Crítico:</label>
+                    <input type="number" min="1" value="5" id="critico-prod" class="p-1 border border-black w-28">
+                </div>
+            </div>
+            <div class="flex flex-col gap-2 justify-center">
+                <button onclick="guardarProducto()" class="boton-verde-claro">Guardar</button>
+                <button onclick="borrarProducto()" class="boton-azul">Eliminar</button>
+                <button onclick="limpiarCamposInv()" class="boton-amarillo">Limpiar</button>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- SECCIÓN TRABAJADORES -->
+    <div id="sec-trabajadores" class="p-3 oculto">
+        <h2 class="text-center font-bold text-xl mb-2 bg-black text-white py-1">GESTIÓN DE TRABAJADORES</h2>
+        <div class="mb-3 flex items-center gap-2">
+            <label class="font-bold">🔍 Buscar trabajador:</label>
+            <input type="text" id="buscar-trab" class="p-2 border border-black w-80" placeholder="Nombre, apellido o cargo..." autocomplete="off">
+        </div>
+        <div class="fondo-amarillo p-2 overflow-x-auto">
+            <table class="w-full text-sm border-collapse">
+                <thead class="bg-gray-300 border-b-2 border-black">
+                    <tr>
+                        <th class="p-1 border">#</th>
+                        <th class="p-1 border">Nombres y Apellidos</th>
+                        <th class="p-1 border">Cargo</th>
+                        <th class="p-1 border">Sueldo (Bs)</th>
+                        <th class="p-1 border">Fecha Ingreso</th>
+                        <th class="p-1 border">Próximo Pago</th>
+                        <th class="p-1 border">Teléfono</th>
+                    </tr>
+                </thead>
+                <tbody id="lista-trabajadores"></tbody>
+            </table>
+            <div class="resumen-tabla mt-2">
+                <span>👥 Total trabajadores: <strong id="tot-trabajadores">0</strong></span>
+                <span>💸 TOTAL SUELDOS MENSUALES: <strong id="tot-sueldos">0.00 Bs</strong></span>
+            </div>
+        </div>
+        <div class="fondo-azul p-4 mt-1 flex flex-wrap gap-6">
+            <div class="space-y-2">
+                <div class="flex gap-2 items-center">
+                    <label class="w-40 text-right font-bold">Nombres:</label>
+                    <input type="text" id="trab-nombres" class="p-1 border border-black w-64">
+                </div>
+                <div class="flex gap-2 items-center">
+                    <label class="w-40 text-right font-bold">Apellido Paterno:</label>
+                    <input type="text" id="trab-apellido-pat" class="p-1 border border-black w-64">
+                </div>
+                <div class="flex gap-2 items-center">
+                    <label class="w-40 text-right font-bold">Apellido Materno:</label>
+                    <input type="text" id="trab-apellido-mat" class="p-1 border border-black w-64">
+                </div>
+                <div class="flex gap-2 items-center">
+                    <label class="w-40 text-right font-bold">Cargo / Puesto:</label>
+                    <input type="text" id="trab-cargo" class="p-1 border border-black w-64">
+                </div>
+                <div class="flex gap-2 items-center">
+                    <label class="w-40 text-right font-bold">Sueldo mensual (Bs):</label>
+                    <input type="number" step="0.01" min="0" id="trab-sueldo" class="p-1 border border-black w-40">
+                </div>
+                <div class="flex gap-2 items-center">
+                    <label class="w-40 text-right font-bold">Fecha de Ingreso:</label>
+                    <input type="date" id="trab-ingreso" class="p-1 border border-black w-40">
+                </div>
+                <div class="flex gap-2 items-center">
+                    <label class="w-40 text-right font-bold">Número de teléfono:</label>
+                    <input type="tel" id="trab-telefono" class="p-1 border border-black w-64">
+                </div>
+            </div>
+            <div class="flex flex-col gap-2 justify-center">
+                <button onclick="guardarTrabajador()" class="boton-verde-claro">Guardar Trabajador</button>
+                <button onclick="borrarTrabajador()" class="boton-azul">Eliminar</button>
+                <button onclick="limpiarCamposTrab()" class="boton-amarillo">Limpiar</button>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- SECCIÓN GASTOS -->
+    <div id="sec-gastos" class="p-3 oculto">
+        <h2 class="text-center font-bold text-xl mb-2 bg-black text-white py-1">GASTOS OPERATIVOS MENSUALES</h2>
+        <p class="mb-3 text-center text-sm font-bold">Aquí pon los gastos que tienes CADA MES: luz, agua, internet, alquiler, préstamos, etc.</p>
+        <div class="mb-3 flex items-center gap-2">
+            <label class="font-bold">🔍 Buscar gasto:</label>
+            <input type="text" id="buscar-gasto" class="p-2 border border-black w-80" placeholder="Nombre o monto..." autocomplete="off">
+        </div>
+        <div class="fondo-amarillo p-2 overflow-x-auto">
+            <table class="w-full text-sm border-collapse">
+                <thead class="bg-gray-300 border-b-2 border-black">
+                    <tr>
+                        <th class="p-1 border">#</th>
+                        <th class="p-1 border">Descripción del gasto mensual</th>
+                        <th class="p-1 border">Monto (Bs)</th>
+                    </tr>
+                </thead>
+                <tbody id="lista-gastos"></tbody>
+            </table>
+            <div class="resumen-tabla mt-2">
+                <span>📋 Gastos registrados: <strong id="cant-gastos">0</strong></span>
+                <span>💸 TOTAL GASTOS MENSUALES: <strong id="total-gastos">0.00 Bs</strong></span>
+            </div>
+        </div>
+        <div class="fondo-azul p-4 mt-1 flex flex-wrap gap-6">
+            <div class="space-y-2">
+                <div class="flex gap-2 items-center">
+                    <label class="w-40 text-right font-bold">Descripción:</label>
+                    <input type="text" id="gasto-detalle" class="p-1 border border-black w-80" placeholder="Ej: Luz, Agua, Alquiler, Préstamo...">
+                </div>
+                <div class="flex gap-2 items-center">
+                    <label class="w-40 text-right font-bold">Monto mensual (Bs):</label>
+                    <input type="number" step="0.01" min="0" id="gasto-monto" class="p-1 border border-black w-40">
+                </div>
+            </div>
+            <div class="flex flex-col gap-2 justify-center">
+                <button onclick="guardarGasto()" class="boton-verde-claro">Agregar Gasto</button>
+                <button onclick="borrarGasto()" class="boton-azul">Eliminar</button>
+                <button onclick="limpiarCamposGasto()" class="boton-amarillo">Limpiar</button>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- SECCIÓN RESUMEN -->
+    <div id="sec-resumen" class="p-3 oculto">
+        <div class="bg-white p-5 mt-2 border-2 border-black">
+            <div class="border-b-2 border-black pb-2 mb-4 text-center bg-gray-100 py-2">
+                <h2 class="text-xl font-bold">INFORME DE ANÁLISIS COMPARATIVO Y FINANCIERO</h2>
+                <p class="text-sm font-semibold text-gray-700">RESUMEN Y PROYECCIÓN MENSUAL</p>
+            </div>
+            
+            <div id="alerta-pagos-trabajadores" class="mb-4"></div>
+
+            <div class="mb-4 p-3 bg-gray-100 rounded border">
+                <h3 class="font-bold mb-2">⚙️ Configuración del mes:</h3>
+                <div class="flex items-center gap-2">
+                    <label class="font-bold">¿Cuántos días vas a trabajar este mes?</label>
+                    <input type="number" min="1" max="31" value="26" id="dias-trabajar" class="p-1 border border-black w-16 text-center" oninput="actualizarResumen()">
+                </div>
+            </div>
+
+            <!-- BLOQUE DE GRÁFICOS VISUALES (ESTILO REPORTE) -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div class="p-3 border border-black bg-gray-50 rounded">
+                    <h3 class="font-bold mb-2 text-center text-sm">📊 Obligaciones vs Proyección</h3>
+                    <div style="position: relative; height:220px; width:100%">
+                        <canvas id="graficaBarrasFinanciera"></canvas>
+                    </div>
+                </div>
+                <div class="p-3 border border-black bg-gray-50 rounded">
+                    <h3 class="font-bold mb-2 text-center text-sm">🍩 Distribución de Sueldos y Gastos</h3>
+                    <div style="position: relative; height:220px; width:100%">
+                        <canvas id="graficaDonaDistribucion"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mb-4 p-3 border border-black bg-yellow-50 rounded">
+                <h3 class="font-bold mb-2 border-b border-black pb-1">📉 TOTAL A PAGAR AL FINAL DEL MES:</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-2 mt-2">
+                    <p class="text-base">• Sueldos de trabajadores: <strong id="res-sueldos">0.00 Bs</strong></p>
+                    <p class="text-base">• Gastos operativos fijos: <strong id="res-gastos">0.00 Bs</strong></p>
+                </div>
+                <div class="mt-3 pt-2 border-t border-dashed border-black">
+                    <p class="text-lg font-bold text-red-700">💸 TOTAL OBLIGACIONES: <strong id="res-total-pagar">0.00 Bs</strong></p>
+                </div>
+            </div>
+            
+            <div class="mb-4 p-3 border border-black bg-blue-50 rounded">
+                <h3 class="font-bold mb-2 border-b border-black pb-1">📈 PROYECCIÓN CON LO VENDIDO HOY:</h3>
+                <div class="space-y-1 mt-2">
+                    <p class="text-base">• Ganancia neta de hoy: <strong id="ganancia-hoy">0.00 Bs</strong></p>
+                    <p class="text-base">• Estimado total del mes: <strong id="ganancia-mes">0.00 Bs</strong></p>
+                    <p class="text-base">• Necesitas vender diario mínimo: <strong id="min-diario">0.00 Bs</strong></p>
+                </div>
+            </div>
+            
+            <div id="meta-proximo-pago" class="mb-4 p-3 bg-blue-100 border border-blue-400 rounded"></div>
+
+            <div id="resultado-final" class="my-4"></div>
+
+            <div class="mt-4 pt-3 border-t text-right">
+                <button onclick="cerrarDia()" class="boton-rojo">Cerrar y limpiar ventas del día</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- MODAL DE PAGO -->
+<div id="modal-pago" class="modal-pago">
+    <div class="caja-modal">
+        <h3 class="font-bold mb-3">VENTA EXPRESS 1.0</h3>
+        <p class="text-lg mb-2">Total a pagar: <strong id="monto-total">0.00</strong> Bs</p>
+        <div class="mb-3">
+            <label class="font-bold">Paga con: </label>
+            <input type="number" id="monto-recibido" min="0" step="0.01" class="border border-black p-1 w-44 text-right text-lg">
+        </div>
+        <p class="text-lg mb-4">Su vuelto es: <strong id="vuelto-final">0.00</strong> Bs</p>
+        <div class="flex gap-3 mb-4">
+            <button class="boton-verde-claro">EFECTIVO</button>
+            <button class="boton-azul">QR / TARJETA</button>
+        </div>
+        <div class="text-center">
+            <button onclick="cerrarModalPago()" class="boton-amarillo">VOLVER</button>
+            <button onclick="confirmarPago()" class="boton-verde ml-2">FINALIZAR</button>
+        </div>
+    </div>
+</div>
+
+
+<!-- MODAL DE CÁMARA PARA ESCANEAR CÓDIGO -->
+<div id="modal-camara" class="modal-pago">
+    <div class="caja-modal text-center" style="max-width: 400px; width: 100%;">
+        <h3 class="font-bold mb-2">📷 Escanear Código de Barras</h3>
+        <div id="reader" style="width: 100%; min-height: 250px;"></div>
+        <div class="mt-4">
+            <button onclick="cerrarEscanearCamara()" class="boton-rojo">CERRAR CÁMARA</button>
+        </div>
+    </div>
+</div>
+
+
+<script>
+let inventario = JSON.parse(localStorage.getItem('invExpress')) || [];
+let trabajadores = JSON.parse(localStorage.getItem('trabExpress')) || [];
+let gastos = JSON.parse(localStorage.getItem('gastosExpress')) || [];
+let ventas = JSON.parse(localStorage.getItem('ventasExpress')) || [];
+let carrito = [];
+let codSel = null;
+let trabSel = null;
+let gastoSel = null;
+
+let chartBarras = null;
+let chartDona = null;
+let html5QrCode = null;
+
+function cambiarPestana(pagina){
+    document.querySelectorAll('[id^="sec-"]').forEach(seccion => seccion.classList.add('oculto'));
+    document.querySelectorAll('.btn-menu').forEach(boton => boton.classList.remove('activo'));
+    
+    document.getElementById(`sec-${pagina}`).classList.remove('oculto');
+    document.getElementById(`btn-${pagina}`).classList.add('activo');
+    
+    if(pagina === 'inventario') listarInv();
+    if(pagina === 'trabajadores') listarTrabajadores();
+    if(pagina === 'gastos') listarGastos();
+    if(pagina === 'resumen') actualizarResumen();
+}
+
+function calcularTotalesGenerales(){
+    document.getElementById('tot-prod').textContent = inventario.length;
+    document.getElementById('tot-unid').textContent = inventario.reduce((s,p)=>s+p.stock,0);
+    document.getElementById('tot-costo').textContent = inventario.reduce((s,p)=>s+(p.stock*p.costoCompra),0).toFixed(2)+' Bs';
+    document.getElementById('tot-venta').textContent = inventario.reduce((s,p)=>s+(p.stock*p.precioVenta),0).toFixed(2)+' Bs';
+}
+
+document.getElementById('buscar-inv').addEventListener('input', listarInv);
+document.getElementById('buscar-trab').addEventListener('input', listarTrabajadores);
+document.getElementById('buscar-gasto').addEventListener('input', listarGastos);
+
+const buscador = document.getElementById('buscar-prod');
+const cajaSug = document.getElementById('lista-sugerencias');
+buscador.addEventListener('input', ()=>{
+    let t = buscador.value.trim().toUpperCase();
+    cajaSug.innerHTML='';
+    if(!t){ cajaSug.style.display='none'; return; }
+    let res = inventario.filter(p=>p.codigo.toUpperCase().includes(t)||p.nombre.toUpperCase().includes(t));
+    if(!res.length){ cajaSug.style.display='none'; return; }
+    cajaSug.style.display='block';
+    res.forEach(p=>{
+        let d = document.createElement('div');
+        d.className='item-sug';
+        d.textContent=`${p.codigo} | ${p.nombre} | Stock: ${p.stock}`;
+        d.onclick=()=>{ buscador.value=p.codigo; cajaSug.style.display='none'; };
+        cajaSug.appendChild(d);
+    });
+});
+document.addEventListener('click', e=>{ if(!buscador.contains(e.target)&&!cajaSug.contains(e.target)) cajaSug.style.display='none'; });
+
+function agregarAVenta(){
+    let v = buscador.value.trim();
+    let c = parseInt(document.getElementById('cant-vender').value)||1;
+    let p = inventario.find(x=>x.codigo===v||x.nombre.toUpperCase()===v.toUpperCase());
+    if(!p) return alert('Producto no encontrado');
+    if(c<1||c>p.stock) return alert(`Disponible: ${p.stock}`);
+    let e = carrito.find(x=>x.codigo===p.codigo);
+    e?e.cant+=c:carrito.push({codigo:p.codigo,nombre:p.nombre,precio:p.precioVenta,costo:p.costoCompra,cant:c});
+    actualizarCarrito(); buscador.value=''; document.getElementById('cant-vender').value=1;
+}
+function actualizarCarrito(){
+    let h='',t=0;
+    carrito.forEach((x,i)=>{ let st=x.precio*x.cant; t+=st; h+=`<tr class="border-b border-black"><td class="p-1 text-center">${x.codigo}</td><td class="p-1">${x.nombre}</td><td class="p-1 text-center">${x.cant}</td><td class="p-1 text-right">${x.precio.toFixed(2)}</td><td class="p-1 text-right font-bold">${st.toFixed(2)}</td><td class="p-1 text-center"><button onclick="quitar(${i})" class="text-red-700 font-bold">✖</button></td></tr>`; });
+    document.getElementById('lista-carrito').innerHTML=h;
+    document.getElementById('total-general').textContent=t.toFixed(2)+' Bs';
+}
+function quitar(i){ carrito.splice(i,1); actualizarCarrito(); }
+function limpiarVenta(){ carrito=[]; actualizarCarrito(); }
+
+function iniciarPago(){ if(!carrito.length) return alert('Agrega productos primero'); let t=carrito.reduce((s,x)=>s+x.precio*x.cant,0); document.getElementById('monto-total').textContent=t.toFixed(2); document.getElementById('modal-pago').classList.add('modal-activo'); }
+document.getElementById('monto-recibido').addEventListener('input',()=>{ let t=parseFloat(document.getElementById('monto-total').textContent); let p=parseFloat(document.getElementById('monto-recibido').value)||0; document.getElementById('vuelto-final').textContent=(p-t).toFixed(2); });
+function cerrarModalPago(){ document.getElementById('modal-pago').classList.remove('modal-activo'); }
+function confirmarPago(){
+    carrito.forEach(x=>{ let p=inventario.find(y=>y.codigo===x.codigo); p.stock-=x.cant; ventas.push({nombre:x.nombre,cant:x.cant,costo:x.costo,venta:x.precio}); });
+    guardarTodo(); carrito=[]; cerrarModalPago(); actualizarCarrito(); listarInv(); alert('✅ Venta guardada correctamente');
+}
+
+/* FUNCIONES DE ESCANEO POR CÁMARA */
+function abrirEscanearCamara() {
+    document.getElementById('modal-camara').classList.add('modal-activo');
+    if (!html5QrCode) {
+        html5QrCode = new Html5Qrcode("reader");
+    }
+    html5QrCode.start(
+        { facingMode: "environment" }, 
+        { fps: 10, qrbox: { width: 250, height: 150 } },
+        (decodedText, decodedResult) => {
+            document.getElementById('cod-prod').value = decodedText;
+            cerrarEscanearCamara();
+        },
+        (errorMessage) => {
+            // Errores de escaneo continuo se ignoran para no saturar
+        }
+    ).catch(err => {
+        alert("No se pudo iniciar la cámara. Asegúrate de dar permisos o usar HTTPS.");
+        cerrarEscanearCamara();
+    });
+}
+
+function cerrarEscanearCamara() {
+    if (html5QrCode && html5QrCode.isScanning) {
+        html5QrCode.stop().then(() => {
+            document.getElementById('modal-camara').classList.remove('modal-activo');
+        }).catch(err => {
+            document.getElementById('modal-camara').classList.remove('modal-activo');
+        });
+    } else {
+        document.getElementById('modal-camara').classList.remove('modal-activo');
+    }
+}
+
+function guardarProducto(){
+    let cod = document.getElementById('cod-prod').value.trim();
+    let nom = document.getElementById('nom-prod').value.trim();
+    let rep = Number(document.getElementById('reponer-prod').value) || 0;
+    let st = Number(document.getElementById('stock-prod').value) || 0;
+    let costo = Number(document.getElementById('costo-prod').value) || 0;
+    let venta = Number(document.getElementById('venta-prod').value) || 0;
+    let critico = Number(document.getElementById('critico-prod').value) || 5;
+
+    if(!nom) return alert('Escribe el nombre del producto');
+    if(!cod) cod = String(Date.now());
+
+    let producto = { codigo: cod, nombre: nom, stock: st + rep, costoCompra: costo, precioVenta: venta, stockCritico: critico };
+    let indice = inventario.findIndex(x => x.codigo === cod);
+    indice >=0 ? inventario[indice] = producto : inventario.push(producto);
+
+    guardarTodo(); limpiarCamposInv(); listarInv(); calcularTotalesGenerales(); alert('✅ Producto guardado correctamente');
+}
+function listarInv(){
+    let fil = document.getElementById('buscar-inv').value.trim().toUpperCase();
+    let dat = inventario.filter(p=>!fil||p.codigo.toUpperCase().includes(fil)||p.nombre.toUpperCase().includes(fil));
+    let h='';
+    dat.forEach((p,i)=>{
+        let av = p.stock<=p.stockCritico?'alerta-stock text-red-800 font-bold':'';
+        let sel = codSel===p.codigo?'bg-blue-300':'';
+        h+=`<tr onclick="cargarEditar('${p.codigo}')" class="${av} ${sel} cursor-pointer hover:bg-yellow-200 border-b border-black"><td class="p-1 text-center">${i+1}</td><td class="p-1">${p.codigo}</td><td class="p-1">${p.nombre}</td><td class="p-1 text-center">${p.stock}</td><td class="p-1 text-right">${p.costoCompra.toFixed(2)}</td><td class="p-1 text-right">${p.precioVenta.toFixed(2)}</td><td class="p-1 text-center">${p.stockCritico}</td></tr>`;
+    });
+    document.getElementById('lista-inv').innerHTML=h; calcularTotalesGenerales();
+}
+function cargarEditar(c){ codSel=c; let p=inventario.find(x=>x.codigo===c); document.getElementById('cod-prod').value=p.codigo; document.getElementById('nom-prod').value=p.nombre; document.getElementById('stock-prod').value=p.stock; document.getElementById('reponer-prod').value=0; document.getElementById('costo-prod').value=p.costoCompra; document.getElementById('venta-prod').value=p.precioVenta; document.getElementById('critico-prod').value=p.stockCritico; listarInv(); }
+function borrarProducto(){ if(!codSel) return alert('Selecciona un producto primero'); if(confirm('¿Eliminar este producto?')){ inventario=inventario.filter(x=>x.codigo!==codSel); guardarTodo(); limpiarCamposInv(); listarInv(); } }
+function limpiarCamposInv(){ ['cod-prod','nom-prod','stock-prod','reponer-prod','costo-prod','venta-prod','critico-prod'].forEach(id=>document.getElementById(id).value=''); codSel=null; listarInv(); }
+
+function calcularProximoPago(fechaIngresoStr) {
+    if (!fechaIngresoStr) return 'Sin fecha';
+    let ingreso = new Date(fechaIngresoStr);
+    let hoy = new Date();
+    let proximo = new Date(ingreso);
+    while (proximo <= hoy) {
+        proximo.setMonth(proximo.getMonth() + 1);
+    }
+    return proximo.toISOString().split('T')[0];
+}
+
+function guardarTrabajador(){
+    let n = document.getElementById('trab-nombres').value.trim();
+    let ap = document.getElementById('trab-apellido-pat').value.trim();
+    let am = document.getElementById('trab-apellido-mat').value.trim();
+    let c = document.getElementById('trab-cargo').value.trim();
+    let s = Number(document.getElementById('trab-sueldo').value) || 0;
+    let ing = document.getElementById('trab-ingreso').value;
+    let tel = document.getElementById('trab-telefono').value.trim();
+
+    if(!n || !ap) return alert('Nombres y apellido paterno son obligatorios');
+    if(!ing) return alert('Indica la fecha de ingreso del trabajador');
+
+    let trabajador = {
+        id: trabSel || String(Date.now()),
+        nombres: n,
+        apellidoPaterno: ap,
+        apellidoMaterno: am,
+        cargo: c,
+        sueldo: s,
+        fechaIngreso: ing,
+        telefono: tel
+    };
+
+    let pos = trabajadores.findIndex(x => x.id === trabajador.id);
+    pos >=0 ? trabajadores[pos] = trabajador : trabajadores.push(trabajador);
+
+    guardarTodo(); limpiarCamposTrab(); listarTrabajadores(); alert('✅ Trabajador guardado correctamente');
+}
+function listarTrabajadores(){
+    let fil = document.getElementById('buscar-trab').value.trim().toUpperCase();
+    let dat = trabajadores.filter(t=>!fil||t.nombres.toUpperCase().includes(fil)||t.apellidoPaterno.toUpperCase().includes(fil)||t.cargo.toUpperCase().includes(fil));
+    let h='';
+    dat.forEach((t,i)=>{
+        let sel = trabSel===t.id?'bg-blue-300':'';
+        let proxPago = calcularProximoPago(t.fechaIngreso);
+        h+=`<tr onclick="cargarEditarTrab('${t.id}')" class="${sel} cursor-pointer hover:bg-yellow-200 border-b border-black"><td class="p-1 text-center">${i+1}</td><td class="p-1">${t.nombres} ${t.apellidoPaterno} ${t.apellidoMaterno||''}</td><td class="p-1">${t.cargo}</td><td class="p-1 text-right">${t.sueldo.toFixed(2)}</td><td class="p-1 text-center">${t.fechaIngreso}</td><td class="p-1 text-center font-bold text-blue-800">${proxPago}</td><td class="p-1 text-center">${t.telefono||'-'}</td></tr>`;
+    });
+    document.getElementById('lista-trabajadores').innerHTML=h;
+    document.getElementById('tot-trabajadores').textContent=trabajadores.length;
+    document.getElementById('tot-sueldos').textContent=trabajadores.reduce((s,t)=>s+t.sueldo,0).toFixed(2)+' Bs';
+}
+function cargarEditarTrab(id){ trabSel=id; let t=trabajadores.find(x=>x.id===id); document.getElementById('trab-nombres').value=t.nombres; document.getElementById('trab-apellido-pat').value=t.apellidoPaterno; document.getElementById('trab-apellido-mat').value=t.apellidoMaterno; document.getElementById('trab-cargo').value=t.cargo; document.getElementById('trab-sueldo').value=t.sueldo; document.getElementById('trab-ingreso').value=t.fechaIngreso||''; document.getElementById('trab-telefono').value=t.telefono; listarTrabajadores(); }
+function borrarTrabajador(){ if(!trabSel) return alert('Selecciona un trabajador primero'); if(confirm('¿Eliminar este trabajador?')){ trabajadores=trabajadores.filter(x=>x.id!==trabSel); guardarTodo(); limpiarCamposTrab(); listarTrabajadores(); } }
+function limpiarCamposTrab(){ ['trab-nombres','trab-apellido-pat','trab-apellido-mat','trab-cargo','trab-sueldo','trab-ingreso','trab-telefono'].forEach(id=>document.getElementById(id).value=''); trabSel=null; listarTrabajadores(); }
+
+function guardarGasto(){
+    let d = document.getElementById('gasto-detalle').value.trim();
+    let m = Number(document.getElementById('gasto-monto').value) || 0;
+    if(!d || m<=0) return alert('Completa la descripción y el monto del gasto');
+
+    let gasto = { id: gastoSel || String(Date.now()), detalle: d, monto: m };
+    let pos = gastos.findIndex(x=>x.id===gasto.id);
+    pos>=0 ? gastos[pos]=gasto : gastos.push(gasto);
+
+    guardarTodo(); limpiarCamposGasto(); listarGastos(); alert('✅ Gasto guardado correctamente');
+}
+function listarGastos(){
+    let fil = document.getElementById('buscar-gasto').value.trim().toUpperCase();
+    let dat = gastos.filter(g=>!fil||g.detalle.toUpperCase().includes(fil)||g.monto.toString().includes(fil));
+    let h='';
+    dat.forEach((g,i)=>{
+        let sel = gastoSel===g.id?'bg-blue-300':'';
+        h+=`<tr onclick="cargarEditarGasto('${g.id}')" class="${sel} cursor-pointer hover:bg-yellow-200 border-b border-black"><td class="p-1 text-center">${i+1}</td><td class="p-1">${g.detalle}</td><td class="p-1 text-right font-bold">${g.monto.toFixed(2)} Bs</td></tr>`;
+    });
+    document.getElementById('lista-gastos').innerHTML=h;
+    document.getElementById('cant-gastos').textContent=gastos.length;
+    document.getElementById('total-gastos').textContent=gastos.reduce((s,g)=>s+g.monto,0).toFixed(2)+' Bs';
+}
+function cargarEditarGasto(id){ gastoSel=id; let g=gastos.find(x=>x.id===id); document.getElementById('gasto-detalle').value=g.detalle; document.getElementById('gasto-monto').value=g.monto; listarGastos(); }
+function borrarGasto(){ if(!gastoSel) return alert('Selecciona un gasto primero'); if(confirm('¿Eliminar este gasto?')){ gastos=gastos.filter(x=>x.id!==gastoSel); guardarTodo(); limpiarCamposGasto(); listarGastos(); } }
+function limpiarCamposGasto(){ document.getElementById('gasto-detalle').value=''; document.getElementById('gasto-monto').value=''; gastoSel=null; listarGastos(); }
+
+function actualizarResumen(){
+    let sueldos = trabajadores.reduce((s,t)=>s+t.sueldo,0);
+    let gastosMes = gastos.reduce((s,g)=>s+g.monto,0);
+    let totalPagar = sueldos + gastosMes;
+    let totalVentaHoy = ventas.reduce((s,v)=>s+(v.venta*v.cant),0);
+    let totalCostoHoy = ventas.reduce((s,v)=>s+(v.costo*v.cant),0);
+    let gananciaHoy = totalVentaHoy - totalCostoHoy;
+    let dias = Number(document.getElementById('dias-trabajar').value)||26;
+    let gananciaMes = gananciaHoy * dias;
+    let minDiario = totalPagar / dias;
+
+    document.getElementById('res-sueldos').textContent = sueldos.toFixed(2)+' Bs';
+    document.getElementById('res-gastos').textContent = gastosMes.toFixed(2)+' Bs';
+    document.getElementById('res-total-pagar').textContent = totalPagar.toFixed(2)+' Bs';
+    document.getElementById('ganancia-hoy').textContent = gananciaHoy.toFixed(2)+' Bs';
+    document.getElementById('ganancia-mes').textContent = gananciaMes.toFixed(2)+' Bs';
+    document.getElementById('min-diario').textContent = minDiario.toFixed(2)+' Bs';
+
+    let alertasHtml = '';
+    let hoyObj = new Date();
+    trabajadores.forEach(t => {
+        let prox = calcularProximoPago(t.fechaIngreso);
+        if(prox !== 'Sin fecha') {
+            let fechaProxObj = new Date(prox);
+            let diferenciaDias = Math.ceil((fechaProxObj - hoyObj) / (1000 * 60 * 60 * 24));
+            if(diferenciaDias <= 3 && diferenciaDias >= 0) {
+                alertasHtml += `<div class="p-2 mb-2 bg-yellow-100 border-l-4 border-yellow-500 font-bold text-sm">⚠️ Atención: Próximo pago a <strong>${t.nombres} ${t.apellidoPaterno}</strong> (${t.sueldo.toFixed(2)} Bs) programado para el <strong>${prox}</strong>.</div>`;
+            }
+        }
+    });
+    document.getElementById('alerta-pagos-trabajadores').innerHTML = alertasHtml;
+
+    let totalGastosFijos = gastos.reduce((s,g)=>s+g.monto,0);
+    let primerSueldo = trabajadores.length > 0 ? trabajadores[0].sueldo : 0;
+    let metaEspecifica = (totalGastosFijos + primerSueldo) / dias;
+    document.getElementById('meta-proximo-pago').innerHTML = `<h4 class="font-bold text-blue-900 mb-1">🎯 Meta diaria para cubrir Gastos + Sueldo base:</h4><p class="text-sm">Necesitas generar un promedio diario de <strong>${metaEspecifica.toFixed(2)} Bs</strong> para cubrir los compromisos inmediatos.</p>`;
+
+    renderizarGraficos(totalPagar, gananciaMes, sueldos, gastosMes);
+
+    let res = document.getElementById('resultado-final');
+    if(totalPagar===0){
+        res.innerHTML = `<div class="p-3 bg-yellow-100 border-2 border-yellow-500 rounded">⚠️ Primero agrega sueldos y gastos mensuales para ver el resultado</div>`;
+    } else if(gananciaMes >= totalPagar){
+        res.innerHTML = `<div class="recuadro-alcanza"><h3 class="text-xl font-bold text-green-700">✅ ¡SÍ ALCANZA PARA PAGAR TODO!</h3><p class="text-lg">Te sobrarían aproximadamente <strong>${(gananciaMes-totalPagar).toFixed(2)} Bs</strong> de ganancia.</p></div>`;
+    } else {
+        let falta = totalPagar - gananciaMes;
+        let faltaDiaria = falta / dias;
+        res.innerHTML = `<div class="recuadro-falta"><h3 class="text-xl font-bold text-red-700">❌ NO ALCANZA PARA PAGAR TODO</h3><p class="text-lg">Te faltan <strong>${falta.toFixed(2)} Bs</strong> en el mes</p><p>Necesitas vender <strong>${faltaDiaria.toFixed(2)} Bs</strong> más cada día</p></div>`;
+    }
+}
+
+function renderizarGraficos(obligaciones, proyeccion, sueldos, gastosFijos) {
+    if(chartBarras) chartBarras.destroy();
+    if(chartDona) chartDona.destroy();
+
+    let ctxBarras = document.getElementById('graficaBarrasFinanciera').getContext('2d');
+    chartBarras = new Chart(ctxBarras, {
+        type: 'bar',
+        data: {
+            labels: ['Obligaciones Totales', 'Proyección Mensual'],
+            datasets: [{
+                label: 'Monto en Bs',
+                data: [obligaciones, proyeccion],
+                backgroundColor: ['#dc2626', '#2563eb'],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } }
+        }
+    });
+
+    let ctxDona = document.getElementById('graficaDonaDistribucion').getContext('2d');
+    chartDona = new Chart(ctxDona, {
+        type: 'doughnut',
+        data: {
+            labels: ['Sueldos', 'Gastos Operativos'],
+            datasets: [{
+                data: [sueldos, gastosFijos],
+                backgroundColor: ['#10b981', '#f59e0b'],
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false
+        }
+    });
+}
+
+function cerrarDia(){ if(confirm('¿Limpiar las ventas del día?')){ ventas=[]; guardarTodo(); actualizarResumen(); alert('✅ Ventas del día cerradas'); } }
+
+function guardarTodo(){
+    localStorage.setItem('invExpress', JSON.stringify(inventario));
+    localStorage.setItem('ventasExpress', JSON.stringify(ventas));
+    localStorage.setItem('trabExpress', JSON.stringify(trabajadores));
+    localStorage.setItem('gastosExpress', JSON.stringify(gastos));
+}
+</script>
+</body>
+</html>
